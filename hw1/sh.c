@@ -6,6 +6,9 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
+
+#include "assignment.c.h"
 
 // Simplifed xv6 shell.
 
@@ -60,8 +63,11 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(0);
-    fprintf(stderr, "exec not implemented\n");
+    // fprintf(stderr, "exec not implemented\n");
     // Your code here ...
+    if( -1 == execv(search_exe(ecmd->argv[0]), ecmd->argv)) {
+	printf("[%u] exec error : %s\n", getpid(), strerror(errno));
+     }
     break;
 
   case '>':
@@ -179,34 +185,34 @@ gettoken(char **ps, char *es, char **q, char **eq)
   int ret;
   
   s = *ps;
-  while(s < es && strchr(whitespace, *s))
-    s++;
-  if(q)
-    *q = s;
-  ret = *s;
-  switch(*s){
-  case 0:
-    break;
-  case '|':
-  case '<':
-    s++;
-    break;
-  case '>':
-    s++;
-    break;
-  default:
-    ret = 'a';
-    while(s < es && !strchr(whitespace, *s) && !strchr(symbols, *s))
-      s++;
-    break;
-  }
-  if(eq)
-    *eq = s;
-  
-  while(s < es && strchr(whitespace, *s))
-    s++;
-  *ps = s;
-  return ret;
+ while(s < es && strchr(whitespace, *s))
+   s++;
+ if(q)
+   *q = s;
+ ret = *s;
+ switch(*s){
+ case 0:
+   break;
+ case '|':
+ case '<':
+   s++;
+   break;
+ case '>':
+   s++;
+   break;
+ default:
+   ret = 'a';
+   while(s < es && !strchr(whitespace, *s) && !strchr(symbols, *s))
+     s++;
+   break;
+ }
+ if(eq)
+   *eq = s;
+ 
+ while(s < es && strchr(whitespace, *s))
+   s++;
+ *ps = s;
+ return ret;
 }
 
 int
