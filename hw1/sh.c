@@ -29,6 +29,7 @@ struct redircmd {
   int type;          // < or > 
   struct cmd *cmd;   // the command to be run (e.g., an execcmd)
   char *file;        // the input/output file
+  int file_id;
   int mode;          // the mode to open the file with
   int fd;            // the file descriptor number to use for the file
 };
@@ -53,7 +54,7 @@ runcmd(struct cmd *cmd)
 
   if(cmd == 0)
     exit(0);
-  
+
   switch(cmd->type){
   default:
     fprintf(stderr, "unknown runcmd\n");
@@ -63,8 +64,8 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(0);
-    // fprintf(stderr, "exec not implemented\n");
     // Your code here ...
+
     if( -1 == execv(search_exe(ecmd->argv[0]), ecmd->argv)) {
 	printf("[%u] exec error : %s\n", getpid(), strerror(errno));
      }
@@ -73,18 +74,46 @@ runcmd(struct cmd *cmd)
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    fprintf(stderr, "redir not implemented\n");
+    int id = (rcmd->file_id == -1) ?
+	    open(rcmd->file, rcmd->mode, rcmd, 0666) : rcmd->file_id;
+    dup2(id, rcmd->fd);
+    close(id);
     // Your code here ...
     runcmd(rcmd->cmd);
     break;
 
   case '|':
     pcmd = (struct pipecmd*)cmd;
-    fprintf(stderr, "pipe not implemented\n");
     // Your code here ...
+	int flides[2];
+	const int BSIZE = 100;
+	char buf[BSIZE];
+	ssize_t nbytes;
+
+	if (-1 == pipe(flides)) {
+		exit(-1);
+	}
+	switch (fork()) {
+		case -1:
+			exit(-1);
+			break;
+		case 0: // child
+			close(flides[1]);
+    			dup2(flides[0], 0);
+			close(flides[0]);
+   	   		runcmd(pcmd->right);
+      			exit(0);
+      		break;
+      	default: // parent
+			close(flides[0]);
+    			dup2(flides[1], 1);
+			close(flides[1]);		
+      			runcmd(pcmd->left);
+			sleep(1);
+			exit(0);
+	}
     break;
   }    
-  exit(0);
 }
 
 int
@@ -146,7 +175,7 @@ execcmd(void)
 }
 
 struct cmd*
-redircmd(struct cmd *subcmd, char *file, int type)
+redircmd(struct cmd *subcmd, char *file, int type, int file_id)
 {
   struct redircmd *cmd;
 
@@ -155,6 +184,7 @@ redircmd(struct cmd *subcmd, char *file, int type)
   cmd->type = type;
   cmd->cmd = subcmd;
   cmd->file = file;
+  cmd->file_id = -1;
   cmd->mode = (type == '<') ?  O_RDONLY : O_WRONLY|O_CREAT|O_TRUNC;
   cmd->fd = (type == '<') ? 0 : 1;
   return (struct cmd*)cmd;
@@ -295,10 +325,10 @@ parseredirs(struct cmd *cmd, char **ps, char *es)
     }
     switch(tok){
     case '<':
-      cmd = redircmd(cmd, mkcopy(q, eq), '<');
+      cmd = redircmd(cmd, mkcopy(q, eq), '<', -1);
       break;
     case '>':
-      cmd = redircmd(cmd, mkcopy(q, eq), '>');
+      cmd = redircmd(cmd, mkcopy(q, eq), '>', -1);
       break;
     }
   }
