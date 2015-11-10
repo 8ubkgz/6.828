@@ -11,12 +11,10 @@
 void
 test_backtrace(int x)
 {
-	cprintf("entering test_backtrace %d\n", x);
 	if (x > 0)
 		test_backtrace(x-1);
 	else
 		mon_backtrace(0, 0, 0);
-	cprintf("leaving test_backtrace %d\n", x);
 }
 
 void
@@ -35,6 +33,13 @@ i386_init(void)
 
 	cprintf("6828 decimal is %o octal!\n", 6828);
 
+	int x=1,y=3,z=4;
+	cprintf("x %d y %x z %d\n", x,y,z);
+
+	unsigned int i=0x00646c72;
+	cprintf("H%x Wo%s\n", 57616, &i);
+
+	cprintf("x=%d y=%d\n", 3);
 	// Test the stack backtrace function (lab 1 only)
 	test_backtrace(5);
 
