@@ -1,2 +1,0 @@
-ls /root/
-#df -h
