@@ -6,3 +6,4 @@ obj/
 out/
 dump/
 test/
+.gdbinit
