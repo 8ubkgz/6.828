@@ -57,7 +57,11 @@ static const char *trapname(int trapno)
 		return "System call";
 	return "(unknown trap)";
 }
-
+extern void isr0(void);
+extern void isr1(void);
+extern void isr2(void);
+extern void isr3(void);
+extern void syscall_isr(void);
 
 void
 trap_init(void)
@@ -65,6 +69,11 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+	SETGATE( idt[T_DIVIDE], 1, GD_KT, isr0, 3);
+	SETGATE( idt[T_DEBUG],  1, GD_KT, isr1, 3);
+	SETGATE( idt[T_NMI],    1, GD_KT, isr2, 3);
+	SETGATE( idt[T_BRKPT],  1, GD_KT, isr3, 3);
+	SETGATE( idt[0x50],  1, GD_KT, syscall_isr, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -78,6 +87,8 @@ trap_init_percpu(void)
 	// when we trap to the kernel.
 	ts.ts_esp0 = KSTACKTOP;
 	ts.ts_ss0 = GD_KD;
+	ts.ts_cs = 0x0b;
+	ts.ts_ss =ts.ts_ds =ts.ts_es =ts.ts_fs =ts.ts_gs = 0x13;
 
 	// Initialize the TSS slot of the gdt.
 	gdt[GD_TSS0 >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
@@ -90,6 +101,7 @@ trap_init_percpu(void)
 
 	// Load the IDT
 	lidt(&idt_pd);
+//	asm volatile ("int $0x50");
 }
 
 void

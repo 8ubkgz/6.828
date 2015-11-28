@@ -46,10 +46,44 @@
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
-
-
+TRAPHANDLER_NOEC(isr0, T_DIVIDE);
+TRAPHANDLER_NOEC(isr1, T_DEBUG);
+TRAPHANDLER_NOEC(isr2, T_NMI);
+TRAPHANDLER_NOEC(isr3, T_BRKPT);
+TRAPHANDLER_NOEC(syscall_isr, 0x50);
+// TRAPHANDLER ( hT_DEBUG   , T_DEBUG   ); 
+// TRAPHANDLER ( hT_NMI     , T_NMI     ); 
+// TRAPHANDLER ( hT_BRKPT   , T_BRKPT   ); 
+// TRAPHANDLER ( hT_OFLOW   , T_OFLOW   ); 
+// TRAPHANDLER ( hT_BOUND   , T_BOUND   ); 
+// TRAPHANDLER ( hT_ILLOP   , T_ILLOP   ); 
+// TRAPHANDLER ( hT_DEVICE  , T_DEVICE  ); 
+// TRAPHANDLER ( hT_DBLFLT  , T_DBLFLT  ); 
+// TRAPHANDLER ( hT_TSS     , T_TSS     ); 
+// TRAPHANDLER ( hT_SEGNP   , T_SEGNP   ); 
+// TRAPHANDLER ( hT_STACK   , T_STACK   ); 
+// TRAPHANDLER ( hT_GPFLT   , T_GPFLT   ); 
+// TRAPHANDLER ( hT_PGFLT   , T_PGFLT   ); 
+// TRAPHANDLER ( hT_FPERR   , T_FPERR   ); 
+// TRAPHANDLER ( hT_ALIGN   , T_ALIGN   ); 
+// TRAPHANDLER ( hT_MCHK    , T_MCHK    ); 
+// TRAPHANDLER ( hT_SIMDERR , T_SIMDERR ); 
+// TRAPHANDLER ( hT_SYSCALL , T_SYSCALL ); 
+// TRAPHANDLER ( hT_DEFAULT , T_DEFAULT ); 
 
 /*
  * Lab 3: Your code here for _alltraps
  */
+_alltraps:
+	movw %ds,%ax
+	pushl %eax
+	movw %es,%ax
+	pushl %eax
+	pushal
+	mov $GD_KT, %eax
+	mov %eax,%ds
+	mov %eax,%es
+	
+	pushl %esp
+	call trap
 

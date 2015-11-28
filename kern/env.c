@@ -209,6 +209,8 @@ env_setup_vm(struct Env *e)
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
 	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
+	// map kernel to user env
+	boot_map_region(e->env_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
 	boot_map_region(e->env_pgdir, KERNBASE, (uint32_t)(-1) - KERNBASE, 0, PTE_W);
 
 	return 0;
