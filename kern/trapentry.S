@@ -50,31 +50,44 @@ TRAPHANDLER_NOEC(isr0, T_DIVIDE);
 TRAPHANDLER_NOEC(isr1, T_DEBUG);
 TRAPHANDLER_NOEC(isr2, T_NMI);
 TRAPHANDLER_NOEC(isr3, T_BRKPT);
-TRAPHANDLER_NOEC(syscall_isr, 0x50);
-// TRAPHANDLER ( hT_DEBUG   , T_DEBUG   ); 
-// TRAPHANDLER ( hT_NMI     , T_NMI     ); 
-// TRAPHANDLER ( hT_BRKPT   , T_BRKPT   ); 
-// TRAPHANDLER ( hT_OFLOW   , T_OFLOW   ); 
-// TRAPHANDLER ( hT_BOUND   , T_BOUND   ); 
-// TRAPHANDLER ( hT_ILLOP   , T_ILLOP   ); 
-// TRAPHANDLER ( hT_DEVICE  , T_DEVICE  ); 
-// TRAPHANDLER ( hT_DBLFLT  , T_DBLFLT  ); 
-// TRAPHANDLER ( hT_TSS     , T_TSS     ); 
-// TRAPHANDLER ( hT_SEGNP   , T_SEGNP   ); 
-// TRAPHANDLER ( hT_STACK   , T_STACK   ); 
-// TRAPHANDLER ( hT_GPFLT   , T_GPFLT   ); 
-// TRAPHANDLER ( hT_PGFLT   , T_PGFLT   ); 
-// TRAPHANDLER ( hT_FPERR   , T_FPERR   ); 
-// TRAPHANDLER ( hT_ALIGN   , T_ALIGN   ); 
-// TRAPHANDLER ( hT_MCHK    , T_MCHK    ); 
-// TRAPHANDLER ( hT_SIMDERR , T_SIMDERR ); 
-// TRAPHANDLER ( hT_SYSCALL , T_SYSCALL ); 
-// TRAPHANDLER ( hT_DEFAULT , T_DEFAULT ); 
+TRAPHANDLER_NOEC (isr4  ,  T_OFLOW   ); 
+TRAPHANDLER_NOEC (isr5  ,  T_BOUND   ); 
+TRAPHANDLER_NOEC (isr6  ,  T_ILLOP   ); 
+TRAPHANDLER_NOEC (isr7  ,  T_DEVICE  ); 
+TRAPHANDLER_NOEC (isr8  ,  T_DBLFLT  ); 
+TRAPHANDLER_NOEC (isr9  ,  T_TSS     ); 
+TRAPHANDLER_NOEC (isr10  , T_SEGNP   ); 
+TRAPHANDLER_NOEC (isr11  , T_STACK   ); 
+TRAPHANDLER (isr12  , T_GPFLT   ); 
+//TRAPHANDLER (isr13  , T_PGFLT ); 
+
+	.globl isr13;
+	.type isr13, @function;
+	.align 2;
+isr13:
+	movl %ebp,%eax;
+	xorl %esp,%eax;
+	andl $4, %eax
+	jz _error_pushed;
+	pushl $0; //< error code
+	pushl $T_GPFLT;
+	jmp _alltraps
+_error_pushed:
+	pushl $T_PGFLT;
+	jmp _alltraps
+
+TRAPHANDLER_NOEC (isr14  , T_FPERR  ); 
+TRAPHANDLER_NOEC (isr15  , T_ALIGN   ); 
+TRAPHANDLER_NOEC (isr16  , T_MCHK    ); 
+TRAPHANDLER_NOEC (isr17  , T_SIMDERR ); 
+TRAPHANDLER_NOEC (isr18  , T_SYSCALL ); 
+TRAPHANDLER_NOEC (isr19  , T_DEFAULT ); 
 
 /*
  * Lab 3: Your code here for _alltraps
  */
 _alltraps:
+	xor %eax,%eax
 	movw %ds,%ax
 	pushl %eax
 	movw %es,%ax
