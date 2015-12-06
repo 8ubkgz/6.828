@@ -69,6 +69,7 @@ trap_init(void)
 		SETGATE( idt[idx], 1, GD_KT, vectors[idx], 0);
 	}
 	SETGATE( idt[T_BRKPT], 1, GD_KT, vectors[T_BRKPT], 3);
+	SETGATE( idt[T_DEBUG], 1, GD_KT, vectors[T_DEBUG], 3);
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -182,6 +183,7 @@ trap(struct Trapframe *tf)
 
 	// Return to the current environment, which should be running.
 	assert(curenv && curenv->env_status == ENV_RUNNING);
+	cprintf("left trap\n");
 	env_run(curenv);
 }
 
@@ -194,10 +196,11 @@ trap_dispatch(struct Trapframe *tf)
 	switch(tf->tf_trapno) {
 		case T_BRKPT:
 					monitor(tf);
-				break;
+					mon_dbg(tf);
+		case T_DEBUG:
+					mon_dbg(tf);
+					return;
 		case T_PGFLT:
-//				if ((tf->tf_cs & 3) == 3)
-//						tf->tf_trapno = T_GPFLT;
 					page_fault_handler(tf);
 				break;
 		default:

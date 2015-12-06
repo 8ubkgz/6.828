@@ -34,6 +34,7 @@ static __inline uint32_t read_ebp(void) __attribute__((always_inline));
 static __inline uint32_t read_esp(void) __attribute__((always_inline));
 static __inline void cpuid(uint32_t info, uint32_t *eaxp, uint32_t *ebxp, uint32_t *ecxp, uint32_t *edxp);
 static __inline uint64_t read_tsc(void) __attribute__((always_inline));
+static __inline void reset_trapflag(void) __attribute__((always_inline));
 
 static __inline void
 breakpoint(void)
@@ -239,6 +240,14 @@ write_eflags(uint32_t eflags)
 	__asm __volatile("pushl %0; popfl" : : "r" (eflags));
 }
 
+static __inline void
+set_trapflag(void)
+{
+	uint32_t eflags;
+	eflags = read_eflags();
+	eflags |= 0x100;
+	write_eflags(eflags);
+}
 static __inline uint32_t
 read_ebp(void)
 {

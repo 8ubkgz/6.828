@@ -40,10 +40,10 @@ i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
-	ENV_CREATE(user_divzero, ENV_TYPE_USER);
+//	ENV_CREATE(user_hello, ENV_TYPE_USER);
+//	ENV_CREATE(user_divzero, ENV_TYPE_USER);
 //	ENV_CREATE(user_softint, ENV_TYPE_USER);
-//	ENV_CREATE(user_breakpoint, ENV_TYPE_USER);
+	ENV_CREATE(user_breakpoint, ENV_TYPE_USER);
 //	ENV_CREATE(user_faultwrite, ENV_TYPE_USER);
 #endif // TEST*
 

@@ -145,13 +145,70 @@ monitor(struct Trapframe *tf)
 	cprintf("Welcome to the JOS kernel monitor!\n");
 	cprintf("Type 'help' for a list of commands.\n");
 
+	if (tf != NULL) {
+		print_trapframe(tf);
+		if (tf->tf_trapno == T_BRKPT) return;
+	}
+
+	while (1) {
+		buf = readline("K> ");
+
+		if (buf != NULL)
+			if (runcmd(buf, tf) < 0)
+				break;
+	}
+}
+
+
+void
+mon_dbg(struct Trapframe *tf) {
+	char *buf;
+	size_t j,i = 0;
+
 	if (tf != NULL)
 		print_trapframe(tf);
 
 	while (1) {
-		buf = readline("K> ");
-		if (buf != NULL)
-			if (runcmd(buf, tf) < 0)
+		buf = readline("DBG> ");
+
+		if (!strcmp(buf, "s")) {
+			for(j = i; j < i + 8; j++){
+				cprintf("%p : %02x", (uint32_t*)tf->tf_eip+j, *((uint8_t*)((uint32_t*)tf->tf_eip+j)+0));
+				cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+1));
+				cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+2));
+				cprintf("%02x\n",  				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+3));
+			}
+			i = j;
+			cprintf("\n");
+		}
+		// set breakpoint on next instr
+		if (!strncmp(buf, "b", 1)) {
+			if(strlen(buf) == 1) {
+			// store one byte = *(uint8_t*)tf->tf_eip; use reg_oesp
+//				tf->tf_regs.reg_oesp = tf->tf_eip /*+ sizeof(cur_ins)*/;
+				*(uint8_t*)tf->tf_eip /* + sizeof(cur_ins)*/ = 0xcc;
+			}
+			else {
+				// need somehow to check if addr is valid
+				
+//				if (*(((uint8_t*)tf->tf_eip)-1) == 0xcc) { //< restore previously replaced ins
+//						*(((uint8_t*)tf->tf_eip)-1) = tf->tf_regs.reg_oesp;
+//						tf->tf_eip -= 1;
+//			}
+				tf->tf_regs.reg_oesp = *(uint8_t*)strtol(buf+2, NULL, 16);
+				*(uint8_t*)strtol(buf+2, NULL, 16) = 0xcc;
+			}
+		}
+		// signle instruction
+		if (!strcmp(buf, "si")) {
+				tf->tf_eflags |= (uint32_t)0x100;
+				return;
+		}
+		if (!strcmp(buf, "ca")) {
+				tf->tf_eflags &= ~(uint32_t)0x100;
+				return;
+		}
+		if (!strcmp(buf, "c"))
 				break;
 	}
 }

@@ -10,6 +10,7 @@ struct Trapframe;
 // optionally providing a trap frame indicating the current state
 // (NULL if none).
 void monitor(struct Trapframe *tf);
+void mon_dbg(struct Trapframe *tf);
 
 // Functions implementing monitor commands.
 int mon_help(int argc, char **argv, struct Trapframe *tf);
