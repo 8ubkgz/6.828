@@ -64,10 +64,11 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 	extern int vectors[];
 	// LAB 3: Your code here.
-		SETGATE( idt[0], 1, GD_KT, vectors[0], 3); // TODO
-	for(int idx=1; idx<19; idx++) {
-		SETGATE( idt[idx], 1, GD_KT, vectors[idx-1], 3);
+//		SETGATE( idt[0], 1, GD_KT, vectors[0], 3); // TODO
+	for(int idx=0; idx<19; idx++) {
+		SETGATE( idt[idx], 1, GD_KT, vectors[idx], 0);
 	}
+	SETGATE( idt[T_BRKPT], 1, GD_KT, vectors[T_BRKPT], 3);
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -94,7 +95,6 @@ trap_init_percpu(void)
 
 	// Load the IDT
 	lidt(&idt_pd);
-//	asm volatile ("int $0xe");
 }
 
 void
@@ -196,6 +196,8 @@ trap_dispatch(struct Trapframe *tf)
 					monitor(tf);
 				break;
 		case T_PGFLT:
+//				if ((tf->tf_cs & 3) == 3)
+//						tf->tf_trapno = T_GPFLT;
 					page_fault_handler(tf);
 				break;
 		default:
