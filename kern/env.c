@@ -297,10 +297,10 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
 
-	uintptr_t* _s = (uintptr_t*)ROUNDDOWN(va, PGSIZE);
-	uintptr_t* _e = (uintptr_t*)ROUNDUP(va + len, PGSIZE);
+	uintptr_t _s = (uintptr_t)ROUNDDOWN(va, PGSIZE);
+	uintptr_t _e = (uintptr_t)ROUNDUP(va + len, PGSIZE);
 	pte_t *_pte;
-	for(uintptr_t* i = _s; i < _e; i+=PGSIZE) {
+	for(uintptr_t i = _s; i < _e; i+=PGSIZE) {
 		if ( 0 > page_insert(e->env_pgdir, page_alloc(1), (void*)i, PTE_W|PTE_U))
 				panic("allocation failed");
 	}
@@ -385,7 +385,6 @@ load_icode(struct Env *e, uint8_t *binary)
 			if (p == NULL || ph->p_filesz > ph->p_memsz)
 				panic("ph->p_filesz > ph->p_memsz");
 
-			//memcpy((void*)KADDR(PTE_ADDR(*pa)), (void*)(binary + ph->p_offset), ph->p_filesz);
 			memcpy((void*)(KADDR(PTE_ADDR(page2pa(p))) + PGOFF(ph->p_va)), (void*)(binary + ph->p_offset), ph->p_filesz);
 
 	//  Any remaining memory bytes should be cleared to zero.
