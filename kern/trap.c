@@ -69,7 +69,8 @@ trap_init(void)
 		SETGATE( idt[idx], 1, GD_KT, vectors[idx], 0);
 	}
 	SETGATE( idt[T_BRKPT], 1, GD_KT, vectors[T_BRKPT], 3);
-	SETGATE( idt[T_DEBUG], 1, GD_KT, vectors[T_DEBUG], 3);
+//	SETGATE( idt[T_DEBUG], 1, GD_KT, vectors[T_DEBUG], 3);
+	SETGATE( idt[T_SYSCALL], 1, GD_KT, vectors[20], 3); //TODO change index 20
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -197,12 +198,21 @@ trap_dispatch(struct Trapframe *tf)
 		case T_BRKPT:
 					monitor(tf);
 					mon_dbg(tf);
+					return;
 		case T_DEBUG:
 					mon_dbg(tf);
 					return;
 		case T_PGFLT:
 					page_fault_handler(tf);
 				break;
+		case T_SYSCALL:
+			print_trapframe(tf);
+			syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
+										 tf->tf_regs.reg_ecx,
+										 tf->tf_regs.reg_ebx,
+										 tf->tf_regs.reg_edi,
+										 tf->tf_regs.reg_esi);
+			return;
 		default:
 				break;
 	}

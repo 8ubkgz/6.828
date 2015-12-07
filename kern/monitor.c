@@ -172,14 +172,16 @@ mon_dbg(struct Trapframe *tf) {
 		buf = readline("DBG> ");
 
 		if (!strcmp(buf, "s")) {
-			for(j = i; j < i + 8; j++){
-				cprintf("%p : %02x", (uint32_t*)tf->tf_eip+j, *((uint8_t*)((uint32_t*)tf->tf_eip+j)+0));
-				cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+1));
-				cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+2));
-				cprintf("%02x\n",  				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+3));
+			if(strlen(buf) == 1) {
+				for(j = i; j < i + 8; j++){
+					cprintf("%p : %02x", (uint32_t*)tf->tf_eip+j, *((uint8_t*)((uint32_t*)tf->tf_eip+j)+0));
+					cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+1));
+					cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+2));
+					cprintf("%02x\n",  				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+3));
 			}
 			i = j;
 			cprintf("\n");
+			}
 		}
 		// set breakpoint on next instr
 		if (!strncmp(buf, "b", 1)) {
@@ -195,7 +197,7 @@ mon_dbg(struct Trapframe *tf) {
 //						*(((uint8_t*)tf->tf_eip)-1) = tf->tf_regs.reg_oesp;
 //						tf->tf_eip -= 1;
 //			}
-				tf->tf_regs.reg_oesp = *(uint8_t*)strtol(buf+2, NULL, 16);
+//				tf->tf_regs.reg_oesp = *(uint8_t*)strtol(buf+2, NULL, 16);
 				*(uint8_t*)strtol(buf+2, NULL, 16) = 0xcc;
 			}
 		}

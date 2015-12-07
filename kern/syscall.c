@@ -70,11 +70,18 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	// Return any appropriate return value.
 	// LAB 3: Your code here.
 
-	panic("syscall not implemented");
 
 	switch (syscallno) {
+		case SYS_cputs:
+				sys_cputs((const char*)a1, a2);
+				break;
+		case SYS_cgetc:
+		case SYS_getenvid:
+		case SYS_env_destroy:
+		case NSYSCALLS:
 	default:
-		return -E_NO_SYS;
+		return -E_INVAL;
 	}
+	return 0;
 }
 

@@ -43,8 +43,8 @@ i386_init(void)
 //	ENV_CREATE(user_hello, ENV_TYPE_USER);
 //	ENV_CREATE(user_divzero, ENV_TYPE_USER);
 //	ENV_CREATE(user_softint, ENV_TYPE_USER);
-	ENV_CREATE(user_breakpoint, ENV_TYPE_USER);
-//	ENV_CREATE(user_faultwrite, ENV_TYPE_USER);
+//	ENV_CREATE(user_breakpoint, ENV_TYPE_USER);
+	ENV_CREATE(user_testbss, ENV_TYPE_USER);
 #endif // TEST*
 
 	// We only have one user environment for now, so just run it.
