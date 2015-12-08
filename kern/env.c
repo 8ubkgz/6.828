@@ -179,7 +179,6 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 static int
 env_setup_vm(struct Env *e)
 {
-	int i;
 	struct PageInfo *p = NULL;
 
 	// Allocate a page for the page directory
@@ -208,11 +207,14 @@ env_setup_vm(struct Env *e)
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
-	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
 	// map kernel to user env
 	boot_map_region(e->env_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
 	boot_map_region(e->env_pgdir, KERNBASE, (uint32_t)(-1) - KERNBASE, 0, PTE_W);
+	for (size_t i = PDX(UTOP); i < NPDENTRIES; i++) {
+		e->env_pgdir[i] = kern_pgdir[i];
+	 }
 
+	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
 	return 0;
 }
 
@@ -299,7 +301,6 @@ region_alloc(struct Env *e, void *va, size_t len)
 
 	uintptr_t _s = (uintptr_t)ROUNDDOWN(va, PGSIZE);
 	uintptr_t _e = (uintptr_t)ROUNDUP(va + len, PGSIZE);
-	pte_t *_pte;
 	for(uintptr_t i = _s; i < _e; i+=PGSIZE) {
 		if ( 0 > page_insert(e->env_pgdir, page_alloc(1), (void*)i, PTE_W|PTE_U))
 				panic("allocation failed");

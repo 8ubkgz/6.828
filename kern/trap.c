@@ -17,6 +17,8 @@ static struct Taskstate ts;
  */
 static struct Trapframe *last_tf;
 
+static void trap_dispatch(struct Trapframe *tf);
+
 /* Interrupt descriptor table.  (Must be built at run time because
  * shifted function addresses can't be represented in relocation records.)
  */
@@ -145,8 +147,6 @@ print_regs(struct PushRegs *regs)
 	cprintf("  eax  0x%08x\n", regs->reg_eax);
 }
 
-static void
-trap_dispatch(struct Trapframe *tf);
 
 void
 trap(struct Trapframe *tf)
@@ -188,7 +188,6 @@ trap(struct Trapframe *tf)
 	env_run(curenv);
 }
 
-
 static void
 trap_dispatch(struct Trapframe *tf)
 {
@@ -204,10 +203,12 @@ trap_dispatch(struct Trapframe *tf)
 					return;
 		case T_PGFLT:
 					page_fault_handler(tf);
+					return;
 				break;
 		case T_SYSCALL:
 			print_trapframe(tf);
-			syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
+			tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, 
+										 tf->tf_regs.reg_edx,
 										 tf->tf_regs.reg_ecx,
 										 tf->tf_regs.reg_ebx,
 										 tf->tf_regs.reg_edi,
@@ -236,12 +237,15 @@ page_fault_handler(struct Trapframe *tf)
 	fault_va = rcr2();
 
 	// Handle kernel-mode page faults.
+	cprintf("  cs   0x----%04x\n", tf->tf_cs);
+	if ((tf->tf_cs & 3) == 0 )
+		panic("page fault in kernel");
 
 	// LAB 3: Your code here.
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
-  if ((tf->tf_cs & 3) == 3) {
+	else { //if ((tf->tf_cs & 3) == 3) {
 		// Destroy the environment that caused the fault.
 		cprintf("[%08x] user fault va %08x ip %08x\n",
 			curenv->env_id, fault_va, tf->tf_eip);

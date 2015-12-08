@@ -74,16 +74,15 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		
 		// five args (or local vars from caller)
 		for (ii = 0; ii < 5; ++ii)
-			cprintf("%08x ",
-				*(uint32_t*)(ebp + (ii + 2) * sizeof(uint32_t)));
+			cprintf("%08x ", *(uint32_t*)(ebp + (ii + 2) * sizeof(uint32_t)));
 		cprintf("\n");
 
 		if (0 == debuginfo_eip(eip, &_eip_info))
 			cprintf("%s:%d: %.*s+%d\n", _eip_info.eip_file,
-					       _eip_info.eip_line,
-					       _eip_info.eip_fn_namelen,
-			      		       _eip_info.eip_fn_name,
-					       (eip - _eip_info.eip_fn_addr));
+					       				_eip_info.eip_line,
+					       				_eip_info.eip_fn_namelen,
+			      		       			_eip_info.eip_fn_name,
+					       				(eip - _eip_info.eip_fn_addr));
 		else
 			cprintf("no info has been found\n");
 	ebp = (uint32_t)(*(uint32_t*)ebp);
