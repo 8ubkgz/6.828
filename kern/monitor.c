@@ -25,6 +25,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	{ "backtrace", "Display information about the kernel", mon_backtrace },
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -60,6 +61,32 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
+	uint32_t eip, ebp = read_ebp();
+	uint32_t ii = 0;
+
+	struct Eipdebuginfo _eip_info;
+
+	while (0 != ebp) {
+		eip = *(uint32_t*)(ebp + sizeof(uint32_t));
+		cprintf("ebp %x eip %x args ",
+		ebp,
+		eip);
+		
+		// five args (or local vars from caller)
+		for (ii = 0; ii < 5; ++ii)
+			cprintf("%08x ", *(uint32_t*)(ebp + (ii + 2) * sizeof(uint32_t)));
+		cprintf("\n");
+
+		if (0 == debuginfo_eip(eip, &_eip_info))
+			cprintf("%s:%d: %.*s+%d\n", _eip_info.eip_file,
+					       				_eip_info.eip_line,
+					       				_eip_info.eip_fn_namelen,
+			      		       			_eip_info.eip_fn_name,
+					       				(eip - _eip_info.eip_fn_addr));
+		else
+			cprintf("no info has been found\n");
+	ebp = (uint32_t)(*(uint32_t*)ebp);
+	}
 	return 0;
 }
 
@@ -124,6 +151,61 @@ monitor(struct Trapframe *tf)
 		buf = readline("K> ");
 		if (buf != NULL)
 			if (runcmd(buf, tf) < 0)
+				break;
+	}
+}
+
+void
+mon_dbg(struct Trapframe *tf) {
+	char *buf;
+	size_t j,i = 0;
+
+	if (tf != NULL)
+		print_trapframe(tf);
+
+	while (1) {
+		buf = readline("DBG> ");
+
+		if (!strcmp(buf, "s")) {
+			if(strlen(buf) == 1) {
+				for(j = i; j < i + 8; j++){
+					cprintf("%p : %02x", (uint32_t*)tf->tf_eip+j, *((uint8_t*)((uint32_t*)tf->tf_eip+j)+0));
+					cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+1));
+					cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+2));
+					cprintf("%02x\n",  				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+3));
+			}
+			i = j;
+			cprintf("\n");
+			}
+		}
+		// set breakpoint on next instr
+		if (!strncmp(buf, "b", 1)) {
+			if(strlen(buf) == 1) {
+			// store one byte = *(uint8_t*)tf->tf_eip; use reg_oesp
+//				tf->tf_regs.reg_oesp = tf->tf_eip /*+ sizeof(cur_ins)*/;
+				*(uint8_t*)tf->tf_eip /* + sizeof(cur_ins)*/ = 0xcc;
+			}
+			else {
+				// need somehow to check if addr is valid
+				
+//				if (*(((uint8_t*)tf->tf_eip)-1) == 0xcc) { //< restore previously replaced ins
+//						*(((uint8_t*)tf->tf_eip)-1) = tf->tf_regs.reg_oesp;
+//						tf->tf_eip -= 1;
+//			}
+//				tf->tf_regs.reg_oesp = *(uint8_t*)strtol(buf+2, NULL, 16);
+				*(uint8_t*)strtol(buf+2, NULL, 16) = 0xcc;
+			}
+		}
+		// signle instruction
+		if (!strcmp(buf, "si")) {
+				tf->tf_eflags |= (uint32_t)0x100;
+				return;
+		}
+		if (!strcmp(buf, "ca")) {
+				tf->tf_eflags &= ~(uint32_t)0x100;
+				return;
+		}
+		if (!strcmp(buf, "c"))
 				break;
 	}
 }

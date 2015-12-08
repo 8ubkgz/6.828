@@ -1,0 +1,55 @@
+make clean
+make[1]: Entering directory '/root/6.828/lab'
+rm -rf obj .gdbinit jos.in qemu.log
+make[1]: Leaving directory '/root/6.828/lab'
+./grade-lab1 
+make[1]: Entering directory '/root/6.828/lab'
++ as kern/entry.S
++ cc kern/entrypgdir.c
++ cc kern/init.c
++ cc kern/console.c
++ cc kern/monitor.c
++ cc kern/printf.c
++ cc kern/kdebug.c
++ cc lib/printfmt.c
++ cc lib/readline.c
++ cc lib/string.c
++ ld obj/kern/kernel
++ as boot/boot.S
++ cc -Os boot/main.c
++ ld boot/boot
++ mk obj/kern/kernel.img
+make[1]: Leaving directory '/root/6.828/lab'
+running JOS: (2.0s) 
+  printf: OK 
+  backtrace count: FAIL 
+    got:
+      0
+    expected:
+      8
+  backtrace arguments: FAIL 
+    got:
+      
+    expected:
+      00000000
+      00000000
+      00000001
+      00000002
+      00000003
+      00000004
+      00000005
+  backtrace symbols: FAIL 
+    got:
+      
+    expected:
+      test_backtrace
+      test_backtrace
+      test_backtrace
+      test_backtrace
+      test_backtrace
+      test_backtrace
+      i386_init
+  backtrace lines: FAIL 
+    No line numbers
+Score: 20/50
+GNUmakefile:198: recipe for target 'grade' failed
