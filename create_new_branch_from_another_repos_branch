@@ -1,0 +1,12 @@
+git checkout --orphan `new_branch_name`
+git rm --cached $(git ls-files) // remove all files
+git rm -r *
+git add .
+// init new empty branch remotely
+git commit -m "init"
+
+git clone -b `new_branch_name` --single-branch https://pdos.csail.mit.edu/6.828/2014/jos.git
+// can remove all the git info from `downstream` branch: rm -r .git
+git add .
+git commit -m `add new files`
+git push origin `new_branch_name`
