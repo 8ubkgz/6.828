@@ -1,0 +1,9 @@
+*.out
+*.o
+*.asm
+*.swp
+obj/
+out/
+dump/
+test/
+.gdbinit
