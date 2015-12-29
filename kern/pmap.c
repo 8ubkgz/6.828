@@ -268,6 +268,10 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+	for (size_t i = 0; i < NCPU; i++) {
+		uintptr_t kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
+		boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+	}
 
 }
 
@@ -289,6 +293,7 @@ page_init(void)
 	// LAB 4:
 	// Change your code to mark the physical page at MPENTRY_PADDR
 	// as in use
+	pa2page(MPENTRY_PADDR)->pp_ref = 1;
 
 	// The example code here marks all physical pages as free.
 	// However this is not truly the case.  What memory is free?
@@ -589,7 +594,11 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	if (MMIOLIM < (base + ROUNDUP(size, PGSIZE)))
+		panic("MMIOLIM exceeded");
+	boot_map_region(kern_pgdir, base, size, pa, PTE_W|PTE_PCD|PTE_PWT);
+	base += ROUNDUP(size, PGSIZE);
+	return (void*)(base - ROUNDUP(size, PGSIZE));
 }
 
 static uintptr_t user_mem_check_addr;

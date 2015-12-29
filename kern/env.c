@@ -391,7 +391,7 @@ load_icode(struct Env *e, uint8_t *binary)
 	for (; ph < eph; ph++) {
 		if (ph->p_type == ELF_PROG_LOAD) {
 
-			// alloc vm
+			// alloc vm BUT always as WRITABLE. Maybe it shouldn't be always WRITABLE?
 			region_alloc(e, (void*)ph->p_va, ph->p_memsz);
 
 			// copy elf sections to vm

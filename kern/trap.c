@@ -111,16 +111,15 @@ trap_init_percpu(void)
 
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
-	ts.ts_esp0 = KSTACKTOP;
-	ts.ts_ss0 = GD_KD;
+	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - cpunum() * (KSTKSIZE + KSTKGAP); // TODO ???
+	thiscpu->cpu_ts.ts_ss0 = GD_KD;
 
-	ts.ts_cs = 0x0b;
-	ts.ts_ss =ts.ts_ds =ts.ts_es =ts.ts_fs =ts.ts_gs = 0x13;
+	thiscpu->cpu_ts.ts_cs = 0x0b;
+	thiscpu->cpu_ts.ts_ss =thiscpu->cpu_ts.ts_ds =thiscpu->cpu_ts.ts_es =thiscpu->cpu_ts.ts_fs =thiscpu->cpu_ts.ts_gs = 0x13;
 
 	// Initialize the TSS slot of the gdt.
-	gdt[GD_TSS0 >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
-					sizeof(struct Taskstate) - 1, 0);
-	gdt[GD_TSS0 >> 3].sd_s = 0;
+	gdt[(GD_TSS0 >> 3) + cpunum()] = SEG16(STS_T32A, (uint32_t)&thiscpu->cpu_ts, sizeof(thiscpu->cpu_ts) - 1, 0);
+	gdt[(GD_TSS0 >> 3) + cpunum()].sd_s = 0;
 
 	// Load the TSS selector (like other segment selectors, the
 	// bottom three bits are special; we leave them 0)
