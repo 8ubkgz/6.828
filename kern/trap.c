@@ -111,7 +111,6 @@ trap_init_percpu(void)
 
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
-	cprintf("trap_init_percpu for %u CPU\n", cpunum());
 	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - cpunum()*(KSTKSIZE+KSTKGAP); // TODO ???
 	thiscpu->cpu_ts.ts_ss0 = GD_KD;
 
@@ -119,8 +118,8 @@ trap_init_percpu(void)
 	thiscpu->cpu_ts.ts_ss =thiscpu->cpu_ts.ts_ds =thiscpu->cpu_ts.ts_es =thiscpu->cpu_ts.ts_fs =thiscpu->cpu_ts.ts_gs = 0x13;
 
 	// Initialize the TSS slot of the gdt.
-	gdt[(GD_TSS0 >> 3) + cpunum()] = SEG16(STS_T32A, (uint32_t)&thiscpu->cpu_ts, sizeof(thiscpu->cpu_ts) - 1, 0);
-	gdt[(GD_TSS0 >> 3) + cpunum()].sd_s = 0;
+	thiscpu->gdt[GD_TSS0 >> 3] = SEG16(STS_T32A, (uint32_t)&thiscpu->cpu_ts, sizeof(thiscpu->cpu_ts) - 1, 0);
+	thiscpu->gdt[GD_TSS0 >> 3].sd_s = 0;
 
 	// Load the TSS selector (like other segment electors, the
 	// bottom three bits are special; we leave them 0)
@@ -133,6 +132,7 @@ trap_init_percpu(void)
 void
 print_trapframe(struct Trapframe *tf)
 {
+#if 0
 	cprintf("TRAP frame at %p from CPU %d\n", tf, cpunum());
 	print_regs(&tf->tf_regs);
 	cprintf("  es   0x----%04x\n", tf->tf_es);
@@ -161,6 +161,7 @@ print_trapframe(struct Trapframe *tf)
 		cprintf("  esp  0x%08x\n", tf->tf_esp);
 		cprintf("  ss   0x----%04x\n", tf->tf_ss);
 	}
+#endif
 }
 
 void

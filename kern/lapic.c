@@ -144,7 +144,6 @@ lapic_startap(uint8_t apicid, uint32_t addr)
 	int i;
 	uint16_t *wrv;
 
-	cprintf("lapic_startap apicid %u\n", apicid);
 	// "The BSP must initialize CMOS shutdown code to 0AH
 	// and the warm reset vector (DWORD based at 40:67) to point at
 	// the AP startup code prior to the [universal startup algorithm]."

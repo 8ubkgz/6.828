@@ -61,9 +61,10 @@ i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-//	ENV_CREATE(user_yield, ENV_TYPE_USER);
-//	ENV_CREATE(user_yield, ENV_TYPE_USER);
-//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_yield, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 #endif // TEST*
@@ -92,10 +93,8 @@ boot_aps(void)
 	// Boot each AP one at a time
 	for (c = cpus; c < cpus + ncpu; c++) {
 		if (c == cpus + cpunum()) {  // We've started already.
-			cprintf("about to start %u CPU skipped \n", c->cpu_id);
 			continue;
 		}
-		cprintf("about to start %u CPU .. \n", c->cpu_id);
 
 		// Tell mpentry.S what stack to use 
 		mpentry_kstack = percpu_kstacks[c - cpus] + KSTKSIZE;
@@ -104,7 +103,6 @@ boot_aps(void)
 		// Wait for the CPU to finish some basic setup in mp_main()
 		while(c->cpu_status != CPU_STARTED)
 			;
-		cprintf(".. cpu %u started\n", c->cpu_id);
 	}
 }
 
@@ -130,11 +128,8 @@ mp_main(void)
 	// only one CPU can enter the scheduler at a time!
 	//
 	// Your code here:
-//	for (;;);
 	lock_kernel();
 	sched_yield();
-
-	// Remove this after you finish Exercise 4
 }
 
 /*

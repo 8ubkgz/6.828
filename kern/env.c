@@ -36,31 +36,35 @@ static struct Env *env_free_list;	// Free environment list
 // definition of gdt specifies the Descriptor Privilege Level (DPL)
 // of that descriptor: 0 for kernel and 3 for user.
 //
-struct Segdesc gdt[NCPU + 5] =
+struct Segdesc gdt[NSEGS];
+
+void
+seginit(void)
 {
-	// 0x0 - unused (always faults -- for trapping NULL far pointers)
-	SEG_NULL,
+		struct CpuInfo *c;
 
-	// 0x8 - kernel code segment
-	[GD_KT >> 3] = SEG(STA_X | STA_R, 0x0, 0xffffffff, 0),
+		// Map "logical" addresses to virtual addresses using identity map.
+		// Cannot share a CODE descriptor for both kernel and user
+		// because it would have to have DPL_USR, but the CPU forbids
+		// an interrupt from CPL=0 to DPL=3.
+		c = &cpus[cpunum()];
+		c->gdt[SEG_0] = SEG_NULL;
+		c->gdt[GD_KT >> 3] = SEG(STA_X|STA_R, 0, 0xffffffff, 0);
+		c->gdt[GD_KD >> 3] = SEG(STA_W, 0, 0xffffffff, 0);
+		c->gdt[GD_UT >> 3] = SEG(STA_X|STA_R, 0, 0xffffffff, DPL_USER);
+		c->gdt[GD_UD >> 3] = SEG(STA_W, 0, 0xffffffff, DPL_USER);
+		c->gdt[GD_TSS0 >> 3] = SEG_NULL;
 
-	// 0x10 - kernel data segment
-	[GD_KD >> 3] = SEG(STA_W, 0x0, 0xffffffff, 0),
+		// Map cpu, and curproc
+//		c->gdt[SEG_KCPU] = SEG(STA_W, &c->cpu, 8, 0);
 
-	// 0x18 - user code segment
-	[GD_UT >> 3] = SEG(STA_X | STA_R, 0x0, 0xffffffff, 3),
+		lgdt(c->gdt, sizeof(c->gdt));
+//		loadgs(SEG_KCPU << 3);
 
-	// 0x20 - user data segment
-	[GD_UD >> 3] = SEG(STA_W, 0x0, 0xffffffff, 3),
-
-	// Per-CPU TSS descriptors (starting from GD_TSS0) are initialized
-	// in trap_init_percpu()
-	[GD_TSS0 >> 3] = SEG_NULL
-};
-
-struct Pseudodesc gdt_pd = {
-	sizeof(gdt) - 1, (unsigned long) gdt
-};
+		// Initialize cpu-local storage.
+//		cpu = c;
+//		proc = 0;
+}
 
 //
 // Converts an envid to an env pointer.
@@ -138,7 +142,7 @@ env_init(void)
 void
 env_init_percpu(void)
 {
-	lgdt(&gdt_pd);
+	seginit();
 	// The kernel never uses GS or FS, so we leave those set to
 	// the user data segment.
 	asm volatile("movw %%ax,%%gs" :: "a" (GD_UD|3));
@@ -570,6 +574,7 @@ env_run(struct Env *e)
 	curenv->env_status = ENV_RUNNING;
 	curenv->env_runs++;
 	lcr3(PADDR(curenv->env_pgdir));
+	cprintf("CPU %u leaving kernel ...\n", cpunum());
 	unlock_kernel();
 	env_pop_tf(&curenv->env_tf);
 
