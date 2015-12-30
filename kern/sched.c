@@ -11,7 +11,7 @@ void sched_halt(void);
 void
 sched_yield(void)
 {
-	struct Env *idle;
+	struct Env *idle = NULL;
 
 	// Implement simple round-robin scheduling.
 	//
@@ -29,8 +29,38 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
+	
+	// first acquisition of boot cpu
+	if (curenv == NULL && cpunum() == bootcpu->cpu_id) {
+			cprintf("run initial env\n");
+			env_run(envs);
+	}
+	
+	if (curenv == NULL)
+		curenv = envs;
+	idle = curenv+1;
 
-	// sched_halt never returns
+_Continue_loop:
+	while(idle != curenv) {
+		if (idle->env_link == NULL) {
+			idle = envs;
+			continue;
+		}
+		switch (idle->env_status) {
+			case ENV_RUNNABLE:
+					goto _Exit_loop;
+			case ENV_FREE:
+					idle = idle+1;
+					goto _Continue_loop;
+		}
+	}
+
+_Exit_loop:
+	if (idle != curenv)
+		env_run(idle);
+	else if (idle == curenv && idle->env_status == ENV_RUNNING)
+		env_run(idle);
+	
 	sched_halt();
 }
 

@@ -50,16 +50,22 @@ i386_init(void)
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
-
+	lock_kernel();
 	// Starting non-boot CPUs
 	boot_aps();
+
+	ENV_CREATE(user_idle, ENV_TYPE_USER); // initial env
 
 #if defined(TEST)
 	// Don't touch -- used by grading script!
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	ENV_CREATE(user_primes, ENV_TYPE_USER);
+//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_hello, ENV_TYPE_USER);
+	ENV_CREATE(user_hello, ENV_TYPE_USER);
 #endif // TEST*
 
 	// Schedule and run the first user environment!
@@ -85,8 +91,11 @@ boot_aps(void)
 
 	// Boot each AP one at a time
 	for (c = cpus; c < cpus + ncpu; c++) {
-		if (c == cpus + cpunum())  // We've started already.
+		if (c == cpus + cpunum()) {  // We've started already.
+			cprintf("about to start %u CPU skipped \n", c->cpu_id);
 			continue;
+		}
+		cprintf("about to start %u CPU .. \n", c->cpu_id);
 
 		// Tell mpentry.S what stack to use 
 		mpentry_kstack = percpu_kstacks[c - cpus] + KSTKSIZE;
@@ -95,6 +104,7 @@ boot_aps(void)
 		// Wait for the CPU to finish some basic setup in mp_main()
 		while(c->cpu_status != CPU_STARTED)
 			;
+		cprintf(".. cpu %u started\n", c->cpu_id);
 	}
 }
 
@@ -104,7 +114,11 @@ mp_main(void)
 {
 	// We are in high EIP now, safe to switch to kern_pgdir 
 	lcr3(PADDR(kern_pgdir));
+	if (thiscpu->cpu_status == CPU_STARTED) {
+			asm volatile("nop");
+	}
 	cprintf("SMP: CPU %d starting\n", cpunum());
+
 
 	lapic_init();
 	env_init_percpu();
@@ -116,9 +130,11 @@ mp_main(void)
 	// only one CPU can enter the scheduler at a time!
 	//
 	// Your code here:
+//	for (;;);
+	lock_kernel();
+	sched_yield();
 
 	// Remove this after you finish Exercise 4
-//	for (;;);
 }
 
 /*

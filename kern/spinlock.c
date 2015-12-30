@@ -39,6 +39,8 @@ get_caller_pcs(uint32_t pcs[])
 static int
 holding(struct spinlock *lock)
 {
+	if (lock->locked)
+		cprintf("locked by %u cpu\n", cpunum());
 	return lock->locked && lock->cpu == thiscpu;
 }
 #endif

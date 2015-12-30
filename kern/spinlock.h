@@ -3,7 +3,10 @@
 
 #include <inc/types.h>
 
+#include <kern/cpu.h>
+
 // Comment this to disable spinlock debugging
+#undef DEBUG_SPINLOCK
 #define DEBUG_SPINLOCK
 
 // Mutual exclusion lock.
@@ -30,6 +33,7 @@ extern struct spinlock kernel_lock;
 static inline void
 lock_kernel(void)
 {
+	cprintf("big kernel lock by %u CPU\n", cpunum());
 	spin_lock(&kernel_lock);
 }
 
