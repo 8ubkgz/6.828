@@ -30,16 +30,8 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
 	
-	// first acquisition of boot cpu
-//	if (curenv == NULL && cpunum() == bootcpu->cpu_id) {
-//			cprintf("run initial env\n");
-//			env_run(envs);
-//	}
-	
-	if (curenv == NULL) {
-		d("CPU %u curenv is NULL\n", cpunum());
+	if (curenv == NULL)
 		idle = envs;
-	}
 	else
 		idle = curenv+1;
 	
@@ -68,12 +60,10 @@ _Continue_loop:
 					goto _Continue_loop;
 		}
 	}
-
 _Exit_loop:
 	if (idle != curenv)
 		env_run(idle);
 	else if (idle == curenv && idle->env_status == ENV_RUNNING)
-//			if ((idle == envs && cpunum() == bootcpu->cpu_id) || (idle != envs))
 				env_run(idle);
 	
 	sched_halt();
