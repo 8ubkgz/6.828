@@ -31,16 +31,17 @@ sched_yield(void)
 	// LAB 4: Your code here.
 	
 	// first acquisition of boot cpu
-	if (curenv == NULL && cpunum() == bootcpu->cpu_id) {
-			cprintf("run initial env\n");
-			env_run(envs);
-	}
+//	if (curenv == NULL && cpunum() == bootcpu->cpu_id) {
+//			cprintf("run initial env\n");
+//			env_run(envs);
+//	}
 	
 	if (curenv == NULL) {
-		cprintf("CPU %u curenv is NULL\n", cpunum());
-		curenv = envs;
+		d("CPU %u curenv is NULL\n", cpunum());
+		idle = envs;
 	}
-	idle = curenv+1;
+	else
+		idle = curenv+1;
 	
 	size_t guard_counter =0;
 
@@ -48,7 +49,8 @@ _Continue_loop:
 	while(idle != curenv) {
 
 			if (NENV < (guard_counter++)) {
-					panic("guard_counter > NENV");
+					d("guard_counter > NENV\n");
+					sched_halt();
 			}
 
 		if (idle->env_link == NULL) {
@@ -71,7 +73,7 @@ _Exit_loop:
 	if (idle != curenv)
 		env_run(idle);
 	else if (idle == curenv && idle->env_status == ENV_RUNNING)
-			if ((idle == envs && cpunum() == bootcpu->cpu_id) || (idle != envs))
+//			if ((idle == envs && cpunum() == bootcpu->cpu_id) || (idle != envs))
 				env_run(idle);
 	
 	sched_halt();
@@ -84,7 +86,7 @@ void
 sched_halt(void)
 {
 	int i;
-	cprintf("CPU %u halted\n", cpunum());
+	d("CPU %u halted\n", cpunum());
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.
 	for (i = 0; i < NENV; i++) {
@@ -94,7 +96,7 @@ sched_halt(void)
 			break;
 	}
 	if (i == NENV) {
-		cprintf("No runnable environments in the system!\n");
+		d("No runnable environments in the system!\n");
 		while (1)
 			monitor(NULL);
 	}
@@ -117,7 +119,7 @@ sched_halt(void)
 		"movl %0, %%esp\n"
 		"pushl $0\n"
 		"pushl $0\n"
-//		"sti\n"
+		"sti\n"
 		"1:\n"
 		"hlt\n"
 		"jmp 1b\n"

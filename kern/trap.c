@@ -132,7 +132,7 @@ trap_init_percpu(void)
 void
 print_trapframe(struct Trapframe *tf)
 {
-#if 0
+#ifdef DEBUG
 	cprintf("TRAP frame at %p from CPU %d\n", tf, cpunum());
 	print_regs(&tf->tf_regs);
 	cprintf("  es   0x----%04x\n", tf->tf_es);
@@ -231,10 +231,10 @@ trap(struct Trapframe *tf)
 	// If we made it to this point, then no other environment was
 	// scheduled, so we should return to the current environment
 	// if doing so makes sense.
-	if (curenv && curenv->env_status == ENV_RUNNING)
+//	if (curenv && curenv->env_status == ENV_RUNNING)
 		env_run(curenv);
-	else
-		sched_yield();
+//	else
+//		sched_yield();
 }
 
 static void
@@ -340,6 +340,7 @@ page_fault_handler(struct Trapframe *tf)
 		cprintf("[%08x] user fault va %08x ip %08x\n",
 			curenv->env_id, fault_va, tf->tf_eip);
 		print_trapframe(tf);
+		panic("stop");
 		env_destroy(curenv);
 	}
 }

@@ -159,14 +159,18 @@ void
 mon_dbg(struct Trapframe *tf) {
 	char *buf;
 	size_t j,i = 0;
+	static bool continue_flag = 0;
 
 	if (tf != NULL)
 		print_trapframe(tf);
 
 	while (1) {
-		buf = readline("DBG> ");
+		if (continue_flag)
+				break;
 
-		if (!strcmp(buf, "s")) {
+			buf = readline("DBG> ");
+
+		if (!strncmp(buf, "s", 1)) {
 			if(strlen(buf) == 1) {
 				for(j = i; j < i + 8; j++){
 					cprintf("%p : %02x", (uint32_t*)tf->tf_eip+j, *((uint8_t*)((uint32_t*)tf->tf_eip+j)+0));
@@ -177,6 +181,8 @@ mon_dbg(struct Trapframe *tf) {
 			i = j;
 			cprintf("\n");
 			}
+			else
+				cprintf("  : %08x\n", *(uint32_t*)strtol(buf+2,NULL,16));
 		}
 		// set breakpoint on next instr
 		if (!strncmp(buf, "b", 1)) {
@@ -193,7 +199,14 @@ mon_dbg(struct Trapframe *tf) {
 //						tf->tf_eip -= 1;
 //			}
 //				tf->tf_regs.reg_oesp = *(uint8_t*)strtol(buf+2, NULL, 16);
-				*(uint8_t*)strtol(buf+2, NULL, 16) = 0xcc;
+
+				uint8_t* addr = (uint8_t*)strtol(buf+2, NULL, 16);
+				*addr = 0xcc;
+
+				// fill with zeros (nops) the rest of replaced instruction-> align it
+				size_t pad = strtol(buf+2+2*sizeof(uint32_t*)+1, NULL, 10);
+				for (i = 1; i < pad; i++)
+					*(addr + i)  = 0x90;
 			}
 		}
 		// signle instruction
@@ -207,5 +220,9 @@ mon_dbg(struct Trapframe *tf) {
 		}
 		if (!strcmp(buf, "c"))
 				break;
+		if (!strcmp(buf, "continue")) {
+			continue_flag = 1;
+			break;
+		}
 	}
 }

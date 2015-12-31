@@ -54,17 +54,18 @@ i386_init(void)
 	// Starting non-boot CPUs
 	boot_aps();
 
-	ENV_CREATE(user_idle, ENV_TYPE_USER); // initial env
+//	ENV_CREATE(user_idle, ENV_TYPE_USER); // initial env
 
 #if defined(TEST)
 	// Don't touch -- used by grading script!
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	ENV_CREATE(user_yield, ENV_TYPE_USER);
-	ENV_CREATE(user_yield, ENV_TYPE_USER);
-	ENV_CREATE(user_yield, ENV_TYPE_USER);
-	ENV_CREATE(user_yield, ENV_TYPE_USER);
+//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+//	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 #endif // TEST*

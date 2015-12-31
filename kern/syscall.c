@@ -21,7 +21,6 @@ sys_cputs(const char *s, size_t len)
 	// Check that the user has permission to read memory [s, s+len).
 	// Destroy the environment if not.
 	// LAB 3: Your code here.
-	cprintf("sys_cputs entered\n");
 	user_mem_assert(curenv, s, len, 0);
 
 	// Print the string supplied by the user.

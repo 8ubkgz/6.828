@@ -40,7 +40,7 @@ static int
 holding(struct spinlock *lock)
 {
 	if (lock->locked)
-		cprintf("[CPU %u] locked by %u cpu\n", cpunum(), lock->cpu->cpu_id);
+		d("[CPU %u] locked by %u cpu\n", cpunum(), lock->cpu->cpu_id);
 	return lock->locked && lock->cpu == thiscpu;
 }
 #endif
@@ -72,7 +72,7 @@ spin_lock(struct spinlock *lk)
 	// reordered before it. 
 	while (xchg(&lk->locked, 1) != 0)
 		asm volatile ("pause");
-	cprintf("CPU %u locked\n", cpunum());
+	d("CPU %u locked\n", cpunum());
 
 	// Record info about lock acquisition for debugging.
 #ifdef DEBUG_SPINLOCK
@@ -85,7 +85,7 @@ spin_lock(struct spinlock *lk)
 void
 spin_unlock(struct spinlock *lk)
 {
-	cprintf("CPU %u unlocking .. \n", cpunum());
+	d("CPU %u unlocking .. \n", cpunum());
 #ifdef DEBUG_SPINLOCK
 	if (!holding(lk)) {
 		int i;

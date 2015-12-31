@@ -182,7 +182,7 @@ mp_init(void)
 		case MPPROC:
 			proc = (struct mpproc *)p;
 			if (proc->flags & MPPROC_BOOT) {
-				cprintf("bootcpu id %u\n", ncpu);
+				d("bootcpu id %u\n", ncpu);
 				bootcpu = &cpus[ncpu];
 			}
 			if (ncpu < NCPU) {
