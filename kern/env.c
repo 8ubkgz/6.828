@@ -93,7 +93,11 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 	// (i.e., does not refer to a _previous_ environment
 	// that used the same slot in the envs[] array).
 	e = &envs[ENVX(envid)];
-	if (e->env_status == ENV_FREE || e->env_id != envid) {
+	if (e->env_status == ENV_FREE) {
+		*env_store = 0;
+		return -E_BAD_ENV;
+	}
+	if ( e->env_id != envid) {
 		*env_store = 0;
 		return -E_BAD_ENV;
 	}
@@ -407,8 +411,8 @@ load_icode(struct Env *e, uint8_t *binary)
 				panic("ph->p_filesz > ph->p_memsz");
 
 			memcpy((void*)ph->p_va, (void*)(binary + ph->p_offset), ph->p_filesz);
+			memset((void*)ph->p_va + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
 
-	//  Any remaining memory bytes should be cleared to zero.
 		}
 	}
 
