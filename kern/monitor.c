@@ -158,7 +158,8 @@ monitor(struct Trapframe *tf)
 void
 mon_dbg(struct Trapframe *tf) {
 	char *buf;
-	size_t j,i = 0;
+	size_t j = 0,i = 0,cnt = 0;
+	uint32_t* addr;
 	static bool continue_flag = 0;
 
 	if (tf != NULL)
@@ -172,17 +173,21 @@ mon_dbg(struct Trapframe *tf) {
 
 		if (!strncmp(buf, "s", 1)) {
 			if(strlen(buf) == 1) {
-				for(j = i; j < i + 8; j++){
-					cprintf("%p : %02x", (uint32_t*)tf->tf_eip+j, *((uint8_t*)((uint32_t*)tf->tf_eip+j)+0));
-					cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+1));
-					cprintf("%02x",    				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+2));
-					cprintf("%02x\n",  				 			  *((uint8_t*)((uint32_t*)tf->tf_eip+j)+3));
+				addr = (uint32_t*)tf->tf_eip;
+				cnt = 8;
 			}
-			i = j;
+			else {
+				cnt = strtol(buf+2,NULL,10);
+				addr = (uint32_t*)strtol(buf+5,NULL,16);
+			}
+
+			for(j = i; j < i + cnt; j++){
+				cprintf("%p : %02x", (uint32_t*)addr+j, *((uint8_t*)(addr+j)+0));
+				cprintf("%02x",    				 			  *((uint8_t*)(addr+j)+1));
+				cprintf("%02x",    				 			  *((uint8_t*)(addr+j)+2));
+				cprintf("%02x\n",  				 			  *((uint8_t*)(addr+j)+3));
+			}
 			cprintf("\n");
-			}
-			else
-				cprintf("  : %08x\n", *(uint32_t*)strtol(buf+2,NULL,16));
 		}
 		// set breakpoint on next instr
 		if (!strncmp(buf, "b", 1)) {
@@ -200,8 +205,8 @@ mon_dbg(struct Trapframe *tf) {
 //			}
 //				tf->tf_regs.reg_oesp = *(uint8_t*)strtol(buf+2, NULL, 16);
 
-				uint8_t* addr = (uint8_t*)strtol(buf+2, NULL, 16);
-				*addr = 0xcc;
+				addr = (uint32_t*)strtol(buf+2, NULL, 16);
+				*(uint8_t*)addr = 0xcc;
 
 				// fill with zeros (nops) the rest of replaced instruction-> align it
 				size_t pad = strtol(buf+2+2*sizeof(uint32_t*)+1, NULL, 10);

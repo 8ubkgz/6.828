@@ -392,6 +392,7 @@ load_icode(struct Env *e, uint8_t *binary)
 	// load each program segment (ignores ph flags)
 	ph = (struct Proghdr *) ((uint8_t *) elf + elf->e_phoff);
 	eph = ph + elf->e_phnum;
+	lcr3(PADDR(e->env_pgdir));
 	for (; ph < eph; ph++) {
 		if (ph->p_type == ELF_PROG_LOAD) {
 
@@ -405,7 +406,7 @@ load_icode(struct Env *e, uint8_t *binary)
 			if (p == NULL || ph->p_filesz > ph->p_memsz)
 				panic("ph->p_filesz > ph->p_memsz");
 
-			memcpy((void*)(KADDR(PTE_ADDR(page2pa(p))) + PGOFF(ph->p_va)), (void*)(binary + ph->p_offset), ph->p_filesz);
+			memcpy((void*)ph->p_va, (void*)(binary + ph->p_offset), ph->p_filesz);
 
 	//  Any remaining memory bytes should be cleared to zero.
 		}
