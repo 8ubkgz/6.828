@@ -23,7 +23,7 @@ int	cprintf(const char *fmt, ...);
 int	vcprintf(const char *fmt, va_list);
 
 #undef DEBUG
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 # define d(arg, ...) cprintf(arg, ##__VA_ARGS__);

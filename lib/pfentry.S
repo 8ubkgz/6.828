@@ -33,22 +33,21 @@
 .globl _pgfault_upcall
 _pgfault_upcall:
 	// Call the C page fault handler.
-	pushl %esp			# function argument: pointer to UTF
+	pushl %esp
 	movl _pgfault_handler, %eax
 	call *%eax
-	addl $4, %esp			# pop function argument
+	addl $4, %esp # pop function argument
 	addl $8, %esp # pop fault_va and err
 	# put trap-time eip to the right possition in trap-time stack
 	movl 0x20(%esp), %eax # trap-time->eip
 	movl 0x28(%esp), %edx # trap-time->esp
 
 #(((UXSTACKTOP-PGSIZE) <= tf->tf_esp) && (tf->tf_esp <= (UXSTACKTOP-1)))
-	int $3
 	cmpl %edx, UXSTACKTOP-PGSIZE
-	jge _skip
+	jnge _skip
 	cmpl %edx, UXSTACKTOP-1
-	jbe _skip
-	addl 4,%edx
+	jnbe _skip
+	subl $4,%edx
 	movl %edx,0x28(%esp)
 _skip:
 	movl %eax,(%edx) # movl eip,(esp-4)

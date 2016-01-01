@@ -305,10 +305,16 @@ page_fault_handler(struct Trapframe *tf)
 	else {
 		if (curenv->env_pgfault_upcall) { //< exception came from user space which has page fault exception handler
 
-			uintptr_t exc_esp = (((UXSTACKTOP-PGSIZE) <= tf->tf_esp) &&
-								(tf->tf_esp <= (UXSTACKTOP-1)))? 
-					tf->tf_esp  - sizeof(int)- sizeof(struct UTrapframe) : UXSTACKTOP /*- sizeof(int)*/ - sizeof(struct UTrapframe);
-
+			uintptr_t exc_esp;
+			if (((UXSTACKTOP-PGSIZE) <= tf->tf_esp) && (tf->tf_esp <= (UXSTACKTOP-1))) {
+					exc_esp = tf->tf_esp  - sizeof(int)- sizeof(struct UTrapframe);
+					d("further exc stack allocation %p\n", exc_esp);
+			}
+			else
+			{
+					exc_esp = UXSTACKTOP /*- sizeof(int)*/ - sizeof(struct UTrapframe);
+					d("initial exc stack allocation %p\n", exc_esp);
+			}
 			user_mem_assert(curenv, (const void*)exc_esp, sizeof(struct UTrapframe), PTE_U);
 
 			// store normal stack in exc stack
