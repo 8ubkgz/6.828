@@ -155,8 +155,9 @@ monitor(struct Trapframe *tf)
 	}
 }
 
+#include <kern/pmap.h>
 void
-mon_dbg(struct Trapframe *tf) {
+mon_dbg(struct Trapframe *tf, struct Env *env) {
 	char *buf;
 	size_t j = 0,i = 0,cnt = 0;
 	uint32_t* addr;
@@ -165,6 +166,7 @@ mon_dbg(struct Trapframe *tf) {
 	if (tf != NULL)
 		print_trapframe(tf);
 
+	lcr3(PADDR(env->env_pgdir)); // switch to user mapping
 	while (1) {
 		if (continue_flag)
 				break;

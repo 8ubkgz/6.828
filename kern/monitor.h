@@ -10,7 +10,8 @@ struct Trapframe;
 // optionally providing a trap frame indicating the current state
 // (NULL if none).
 void monitor(struct Trapframe *tf);
-void mon_dbg(struct Trapframe *tf);
+#include <inc/env.h>
+void mon_dbg(struct Trapframe *tf, struct Env *env);
 
 // Functions implementing monitor commands.
 int mon_help(int argc, char **argv, struct Trapframe *tf);
