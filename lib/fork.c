@@ -25,6 +25,9 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
+	if (!(err & FEC_WR))
+			panic("pgfault hasn't been caused by write");
+	// TODO COW check
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -33,8 +36,14 @@ pgfault(struct UTrapframe *utf)
 	//   You should make three system calls.
 
 	// LAB 4: Your code here.
+	if ( 0 > ( r = sys_page_alloc(0, PFTEMP, PTE_P|PTE_U|PTE_W)))
+			panic("PFTEMP page allocatation failedi %e", r);
 
-	panic("pgfault not implemented");
+	memmove(PFTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
+
+	if ( 0 > ( r = sys_page_map(0, PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_P|PTE_U|PTE_W)) ||
+		 0 > ( r = sys_page_unmap(0, PFTEMP)))
+			panic("pgfault handling failed %e", r);
 }
 
 //
@@ -52,9 +61,19 @@ static int
 duppage(envid_t envid, unsigned pn)
 {
 	int r;
+	uint32_t new_perm = uvpt[pn] & PTE_SYSCALL;
+	void * va = (void*)(pn << 12);
 
-	// LAB 4: Your code here.
-	panic("duppage not implemented");
+	if (new_perm & PTE_W) {
+		new_perm ^= PTE_W|PTE_COW;
+		if ( 0 > (r = sys_page_map(0, va, envid, va, new_perm)) || //< map child
+			 0 > (r = sys_page_map(0, va, 0, va, new_perm)))	   //< remap parent with new perm
+			 panic("child mapping failed : %e", r);
+	}
+	else
+		if ( 0 > ( r = sys_page_map(0, va, envid, va, new_perm))) //< if perm are not changed just map child
+			panic("child mapping failed : %e", r);
+
 	return 0;
 }
 
@@ -74,11 +93,61 @@ duppage(envid_t envid, unsigned pn)
 //   Neither user exception stack should ever be marked copy-on-write,
 //   so you must allocate a new page for the child's user exception stack.
 //
+// refer to UVPT clever mapping
+// pdeno - traverse over pgdir entries
+// pteno - traverse over pt entries
+// ptecnt - restrict to number of pte in pt
+// uvpt - va pointer to pt's
+// uvpd - va pointer to pgdir
+
 envid_t
 fork(void)
 {
-	// LAB 4: Your code here.
-	panic("fork not implemented");
+	envid_t envid;
+	int err;
+	uint32_t pdeno, ptecnt, pteno;
+
+	set_pgfault_handler(pgfault);
+
+	envid = sys_exofork();
+	if (envid < 0)
+		return envid;
+	if (envid == 0) {
+		// Child
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+
+	// Parent
+	for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
+		if (uvpd[pdeno] == 0) {
+			// skip empty PDEs
+			continue;
+		}
+
+		for (ptecnt = 0, pteno = pdeno << 10; ptecnt < NPTENTRIES; ptecnt++,pteno++) {
+			if (uvpt[pteno] == 0) {
+				// skipt empty PTEs
+				continue;
+			}
+
+			// Do not duplicate the exception stack
+			if ((pteno << 12) == (UXSTACKTOP - PGSIZE))
+				continue;
+
+			if ( 0 > (err = duppage(envid, pteno)))
+				panic("duppage: %e", err);
+		}
+	}
+
+	// Child's mapping done, allocate a page for its exception
+	// stack, set its page fault handler and mark it runnable
+
+	if ( 0 > (err = sys_page_alloc(envid, (void *) (UXSTACKTOP - PGSIZE), PTE_P|PTE_U|PTE_W)) ||
+	   ( 0 > (err = sys_env_set_pgfault_upcall(envid, thisenv->env_pgfault_upcall))) ||
+	   ( 0 > (err = sys_env_set_status(envid, ENV_RUNNABLE))))
+			panic("child kick-off failed: e%", err);
+	return envid;
 }
 
 // Challenge!
