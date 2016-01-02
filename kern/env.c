@@ -224,7 +224,6 @@ env_setup_vm(struct Env *e)
 	for (size_t i = PDX(UTOP); i < NPDENTRIES; i++) {
 		e->env_pgdir[i] = kern_pgdir[i];
 	 }
-
 	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
 	return 0;
 }
@@ -286,6 +285,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 
 	// Enable interrupts while in user mode.
 	// LAB 4: Your code here.
+	e->env_tf.tf_eflags = FL_IF;
 
 	// Clear the page fault handler until user installs one.
 	e->env_pgfault_upcall = 0;
@@ -352,38 +352,6 @@ region_alloc(struct Env *e, void *va, size_t len)
 static void
 load_icode(struct Env *e, uint8_t *binary)
 {
-	// Hints:
-	//  Load each program segment into virtual memory
-	//  at the address specified in the ELF section header.
-	//  You should only load segments with ph->p_type == ELF_PROG_LOAD.
-	//  Each segment's virtual address can be found in ph->p_va
-	//  and its size in memory can be found in ph->p_memsz.
-	//  The ph->p_filesz bytes from the ELF binary, starting at
-	//  'binary + ph->p_offset', should be copied to virtual address
-	//  ph->p_va.  Any remaining memory bytes should be cleared to zero.
-	//  (The ELF header should have ph->p_filesz <= ph->p_memsz.)
-	//  Use functions from the previous lab to allocate and map pages.
-	//
-	//  All page protection bits should be user read/write for now.
-	//  ELF segments are not necessarily page-aligned, but you can
-	//  assume for this function that no two segments will touch
-	//  the same virtual page.
-	//
-	//  You may find a function like region_alloc useful.
-	//
-	//  Loading the segments is much simpler if you can move data
-	//  directly into the virtual addresses stored in the ELF binary.
-	//  So which page directory should be in force during
-	//  this function?
-	//
-	//  You must also do something with the program's entry point,
-	//  to make sure that the environment starts executing there.
-	//  What?  (See env_run() and env_pop_tf() below.)
-
-
-	// Now map one page for the program's initial stack
-	// at virtual address USTACKTOP - PGSIZE.
-
 	// LAB 3: Your code here.
 	struct Elf *elf;
 	struct Proghdr *ph, *eph;
@@ -404,7 +372,6 @@ load_icode(struct Env *e, uint8_t *binary)
 			region_alloc(e, (void*)ph->p_va, ph->p_memsz);
 
 			// copy elf sections to vm
-			//pte_t *pa = pgdir_walk(e->env_pgdir, (void*)ph->p_va, false);
 			struct PageInfo *p = page_lookup(e->env_pgdir, (void*)ph->p_va, NULL);
 
 			if (p == NULL || ph->p_filesz > ph->p_memsz)
@@ -422,7 +389,6 @@ load_icode(struct Env *e, uint8_t *binary)
 	region_alloc(e, (void*)(USTACKTOP-PGSIZE), PGSIZE);
 
 	e->env_tf.tf_eip = elf->e_entry;
-
 }
 
 //
@@ -574,12 +540,12 @@ env_run(struct Env *e)
 	if (curenv != NULL) {
 		curenv->env_status = ENV_RUNNABLE;
 	}
-	d("env [%08x] run by %u CPU\n",e->env_id, cpunum());
+//	d("env [%08x] run by %u CPU\n",e->env_id, cpunum());
 	curenv = e;
 	curenv->env_status = ENV_RUNNING;
 	curenv->env_runs++;
 	lcr3(PADDR(curenv->env_pgdir));
-	d("CPU %u leaving kernel ...\n", cpunum());
+//	d("CPU %u leaving kernel ...\n", cpunum());
 	unlock_kernel();
 	env_pop_tf(&curenv->env_tf);
 

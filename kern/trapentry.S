@@ -77,6 +77,14 @@ TRAPHANDLER_NOEC (isr18  , T_MCHK    );
 TRAPHANDLER_NOEC (isr19  , T_SIMDERR ); 
 TRAPHANDLER_NOEC (_syscall_isr  , T_SYSCALL ); 
 
+TRAPHANDLER_NOEC(isr_timer, IRQ_OFFSET + IRQ_TIMER ); 
+ // TRAPHANDLER(isr, IRQ_OFFSET + IRQ_KBD     ); 
+ // TRAPHANDLER(isr, IRQ_OFFSET + IRQ_SERIAL  ); 
+ // TRAPHANDLER(isr, IRQ_OFFSET + IRQ_SPURIOUS);
+ // TRAPHANDLER(isr, IRQ_OFFSET + IRQ_IDE     ); 
+ // TRAPHANDLER(isr, IRQ_OFFSET + IRQ_ERROR   ); 
+
+
 /*
  * Lab 3: Your code here for _alltraps
  */
@@ -89,5 +97,6 @@ _alltraps:
 	mov %eax,%es
 	
 	pushl %esp
+	cli
 	call trap
 
