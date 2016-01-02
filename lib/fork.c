@@ -26,8 +26,9 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 	if (!(err & FEC_WR))
-			panic("pgfault hasn't been caused by write");
-	// TODO COW check
+			panic("[va : %08x] pgfault hasn't been caused by write", addr);
+	if (!(uvpt[(uint32_t)addr >> 12] & PTE_COW))
+			panic("[va : %08x] pgfault hasn't been with COW-marked page", addr);
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
