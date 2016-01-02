@@ -57,6 +57,8 @@ pgfault(struct UTrapframe *utf)
 // Returns: 0 on success, < 0 on error.
 // It is also OK to panic on error.
 //
+static uint32_t _pte_sharing = false;
+
 static int
 duppage(envid_t envid, unsigned pn)
 {
@@ -64,7 +66,8 @@ duppage(envid_t envid, unsigned pn)
 	uint32_t new_perm = uvpt[pn] & PTE_SYSCALL;
 	void * va = (void*)(pn << 12);
 
-	if (new_perm & PTE_W) {
+	if ((_pte_sharing && (uint32_t)va == USTACKTOP - PGSIZE) || //< for sfork only: COW only for stack
+	   (!_pte_sharing && (new_perm & PTE_W))) {
 		new_perm ^= PTE_W|PTE_COW;
 		if ( 0 > (r = sys_page_map(0, va, envid, va, new_perm)) || //< map child
 			 0 > (r = sys_page_map(0, va, 0, va, new_perm)))	   //< remap parent with new perm
@@ -154,6 +157,12 @@ fork(void)
 int
 sfork(void)
 {
-	panic("sfork not implemented");
-	return -E_INVAL;
+	_pte_sharing = true;
+
+	envid_t res =  fork();
+
+	_pte_sharing = false;
+
+	return res;
 }
+
