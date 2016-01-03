@@ -93,6 +93,7 @@ sys_exofork(void)
 	env->env_parent_id = curenv->env_id;
 	env->env_tf.tf_regs.reg_eax = 0; // env_id of child env
 	env->env_status = ENV_NOT_RUNNABLE;
+	d("child id: %u has been created\n", env->env_id);
 	return env->env_id;
 }
 
@@ -141,6 +142,7 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 	int r;
 	if (0 > (r = envid2env(envid, &env, true)))
 		return r;
+	d("[Env %x] setup page-fault userspace handler for env %x\n", curenv->env_id, env->env_id);
 	env->env_pgfault_upcall = func;
 
 	return 0;
@@ -202,8 +204,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 //		address space.
 //	-E_NO_MEM if there's no memory to allocate any necessary page tables.
 static int
-sys_page_map(envid_t srcenvid, void *srcva,
-	     envid_t dstenvid, void *dstva, int perm)
+sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int perm)
 {
 	// Hint: This function is a wrapper around page_lookup() and
 	//   page_insert() from kern/pmap.c.
@@ -292,7 +293,47 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	int r;
+	struct Env* env;
+
+	if (0 > (r = envid2env(envid, &env, 0)))
+			return -E_BAD_ENV;
+
+	if (env->env_status != ENV_NOT_RUNNABLE) {
+			return -E_IPC_NOT_RECV;
+	}
+	if (env->env_ipc_recving != true) {
+			return -E_IPC_NOT_RECV;
+	}
+
+	env->env_ipc_value = value;
+	env->env_ipc_perm = 0;
+
+	if ((uint32_t)env->env_ipc_dstva != -1 && (uint32_t)env->env_ipc_dstva < UTOP) { //< do receiver wants to receive a page and it is valid??
+		if ((uint32_t)srcva != -1 && (uint32_t)srcva < UTOP) { //< do sender wants to send a page and it is valid??
+
+			if ((uint32_t)srcva % PGSIZE == 0 && !(perm & ~PTE_SYSCALL) &&
+				NULL != pgdir_walk(curenv->env_pgdir, srcva, false) &&
+				((perm & PTE_W)? (PTE_W & *pgdir_walk(curenv->env_pgdir, srcva, false)) : true)) {
+						if (0 > (r = page_insert(env->env_pgdir, page_lookup(curenv->env_pgdir, srcva, NULL), env->env_ipc_dstva, perm)))
+							return r;
+						env->env_ipc_perm = perm;
+			}
+			else //< page conditions checking has been failed
+				return -E_INVAL;
+		}
+		else
+			; //< (sender do not want to send any pages) just do nothing
+	}
+	else
+		; //< (receiver do not want any pages) just do nothing
+
+	env->env_ipc_from = curenv->env_id;
+	env->env_ipc_recving = false; //< prevent further sendings
+
+	env->env_status = ENV_RUNNABLE; //< return receiver on track
+
+	return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -310,7 +351,18 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+	// dstva == -1 means "no page expecting"
+	if ((dstva == (void*)-1)? false : ((uint32_t)dstva < UTOP && (uint32_t)dstva % PGSIZE != 0)) {
+			panic("");
+			return -E_INVAL;
+	}
+
+	curenv->env_ipc_recving = true;
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_tf.tf_regs.reg_eax = 0;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+
+	sched_yield(); //< give up cpu
 	return 0;
 }
 
@@ -344,6 +396,10 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 				return sys_env_set_status((envid_t)a1, (int)a2);
 		case SYS_env_set_pgfault_upcall:
 				return sys_env_set_pgfault_upcall((envid_t)a1, (void *)a2);
+		case SYS_ipc_try_send:
+				return sys_ipc_try_send((envid_t)a1, (uint32_t)a2, (void *)a3, (unsigned)a4);
+		case SYS_ipc_recv:
+				return sys_ipc_recv((void *)a1);
 		case SYS_cgetc:
 		case NSYSCALLS:
 	default:
