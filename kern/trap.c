@@ -136,7 +136,7 @@ void
 print_trapframe(struct Trapframe *tf)
 {
 #ifdef DEBUG
-	cprintf("[Env %08x\n]", curenv->env_id);
+	cprintf("[Env %08x]\n", curenv->env_id);
 	cprintf("TRAP frame at %p from CPU %d\n",tf, cpunum());
 	print_regs(&tf->tf_regs);
 	cprintf("  es   0x----%04x\n", tf->tf_es);
@@ -258,7 +258,7 @@ trap_dispatch(struct Trapframe *tf)
 					return;
 				break;
 		case T_SYSCALL:
-			//print_trapframe(tf);
+//			print_trapframe(tf);
 			tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, 
 										 tf->tf_regs.reg_edx,
 										 tf->tf_regs.reg_ecx,
@@ -268,7 +268,7 @@ trap_dispatch(struct Trapframe *tf)
 			return;
 		case (IRQ_OFFSET + IRQ_TIMER):
 			lapic_eoi();
-			print_trapframe(tf);
+//			print_trapframe(tf);
 			sched_yield();
 			return;
 		case (IRQ_OFFSET + IRQ_SPURIOUS):
@@ -308,7 +308,6 @@ page_fault_handler(struct Trapframe *tf)
 
 	// Handle kernel-mode page faults.
 	if ((tf->tf_cs & 3) == 0 ) {
-		print_trapframe(tf);
 		panic("page fault in kernel");
 	}
 	else {
