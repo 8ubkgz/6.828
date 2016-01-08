@@ -2,6 +2,7 @@
 #define JOS_INC_X86_H
 
 #include <inc/types.h>
+#include <inc/mmu.h>
 
 static __inline void breakpoint(void) __attribute__((always_inline));
 static __inline uint8_t inb(int port) __attribute__((always_inline));
@@ -150,9 +151,15 @@ lidt(void *p)
 }
 
 static __inline void
-lgdt(void *p)
+lgdt(struct Segdesc *p, size_t size )
 {
-	__asm __volatile("lgdt (%0)" : : "r" (p));
+	volatile unsigned short pd[3];
+	
+	pd[0] = size-1;
+	pd[1] = (unsigned int)p;
+	pd[2] = (unsigned int)p >> 16;
+
+	__asm __volatile("lgdt (%0)" : : "r" (pd));
 }
 
 static __inline void

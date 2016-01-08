@@ -202,6 +202,16 @@ struct Segdesc {
 #define STS_IG32	0xE	    // 32-bit Interrupt Gate
 #define STS_TG32	0xF	    // 32-bit Trap Gate
 
+#define SEG_0	  0
+#define SEG_KCODE 1  // kernel code$
+#define SEG_KDATA 2  // kernel data+stack$
+#define SEG_KCPU  3  // kernel per-cpu data$
+#define SEG_UCODE 4  // user code$
+#define SEG_UDATA 5  // user data+stack$
+#define SEG_TSS   6  // this process's task state
+
+#define DPL_USER 0x3
+
 
 /*
  *

@@ -11,6 +11,9 @@ struct Trapframe;
 // (NULL if none).
 void monitor(struct Trapframe *tf);
 
+#include <inc/env.h>
+void mon_dbg(struct Trapframe *tf, struct Env *env);
+
 // Functions implementing monitor commands.
 int mon_help(int argc, char **argv, struct Trapframe *tf);
 int mon_kerninfo(int argc, char **argv, struct Trapframe *tf);

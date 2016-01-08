@@ -3,8 +3,11 @@
 
 #include <inc/types.h>
 
+#include <kern/cpu.h>
+
 // Comment this to disable spinlock debugging
-#define DEBUG_SPINLOCK
+#undef DEBUG_SPINLOCK
+//#define DEBUG_SPINLOCK
 
 // Mutual exclusion lock.
 struct spinlock {

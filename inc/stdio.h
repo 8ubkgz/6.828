@@ -22,6 +22,16 @@ int	vsnprintf(char *str, int size, const char *fmt, va_list);
 int	cprintf(const char *fmt, ...);
 int	vcprintf(const char *fmt, va_list);
 
+#undef DEBUG
+#undef DEBUG_TRAP_FRAME
+
+#ifdef DEBUG
+# define d(arg, ...) cprintf(arg, ##__VA_ARGS__);
+#else
+# define d(arg, ...)
+#endif
+
+
 // lib/fprintf.c
 int	printf(const char *fmt, ...);
 int	fprintf(int fd, const char *fmt, ...);

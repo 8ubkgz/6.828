@@ -11,7 +11,7 @@ void sched_halt(void);
 void
 sched_yield(void)
 {
-	struct Env *idle;
+	struct Env *idle = NULL;
 
 	// Implement simple round-robin scheduling.
 	//
@@ -28,9 +28,41 @@ sched_yield(void)
 	// no runnable environments, simply drop through to the code
 	// below to halt the cpu.
 
-	// LAB 4: Your code here.
+	if (curenv == NULL)
+		idle = envs;
+	else
+		idle = curenv+1;
+	
+	size_t guard_counter =0;
 
-	// sched_halt never returns
+_Continue_loop:
+	while(idle != curenv) {
+
+			if (NENV < (guard_counter++)) {
+					sched_halt();
+			}
+
+		if (idle->env_link == NULL) {
+			idle = envs;
+			continue;
+		}
+		switch (idle->env_status) {
+			case ENV_RUNNABLE:
+					goto _Exit_loop;
+			case ENV_RUNNING:
+			case ENV_FREE:
+			case ENV_DYING:
+			case ENV_NOT_RUNNABLE:
+					idle = idle+1;
+					goto _Continue_loop;
+		}
+	}
+_Exit_loop:
+	if (idle != curenv)
+		env_run(idle);
+	else if (idle == curenv && idle->env_status == ENV_RUNNING)
+				env_run(idle);
+	
 	sched_halt();
 }
 
@@ -41,7 +73,6 @@ void
 sched_halt(void)
 {
 	int i;
-
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.
 	for (i = 0; i < NENV; i++) {
@@ -51,7 +82,6 @@ sched_halt(void)
 			break;
 	}
 	if (i == NENV) {
-		cprintf("No runnable environments in the system!\n");
 		while (1)
 			monitor(NULL);
 	}
